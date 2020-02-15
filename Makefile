@@ -9,9 +9,10 @@ all: $(OUT) index.html
 static/%.html: posts/%.md
 	pandoc -s $< -o $@
 
+# TODO: template.
 index.html: $(OUT)
+	# Building index.html.
 	python3 make_index.py
-	# TODO: template.
 	pandoc -s index.html -o index.html --metadata pagetitle="blog"
 
 clean:
