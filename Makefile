@@ -7,13 +7,13 @@ all: $(OUT) index.html
 
 # TODO: template.
 gen/%.html: posts/%.md
-	pandoc -s $< -o $@ --template template.html
+	pandoc -s $< -o $@ --template template.html --css="../common.css"
 
 # TODO: template.
 index.html: $(OUT)
 	# Building index.html.
 	python3 make_index.py
-	pandoc -s index.html -o index.html --metadata pagetitle="blog"
+	pandoc -s index.html -o index.html --template index-template.html  --css="./common.css"
 
 open: all
 	open index.html

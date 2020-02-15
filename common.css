@@ -1,0 +1,22 @@
+body {
+  width: 650px;
+  max-width: 90%;
+  margin: 3em auto;
+}
+
+.title {
+  font-size: 2.5em
+}
+
+body li {
+  text-align: left;
+}
+
+p {
+  text-align: justify;
+}
+
+hr {
+  max-width: 33%;
+  margin: 2em auto;
+}
