@@ -18,7 +18,7 @@ clean:
 	rm -f static/*.html
 
 install: requirements.txt
-	ln -s -f ./hooks/pre-commit ./.git/hooks/pre-commit
+	ln -s -f ../../hooks/pre-commit ./.git/hooks/pre-commit
 
 requirements.txt:
 	pip install -r requirements.txt
