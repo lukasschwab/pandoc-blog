@@ -3,7 +3,7 @@ POSTS=$(shell find posts/*)
 # in the posts directory.
 OUT=$(patsubst posts/%.md, static/%.html, $(POSTS))
 
-all: requirements.txt $(OUT) index.html
+all: $(OUT) index.html
 
 # TODO: template.
 static/%.html: posts/%.md
@@ -15,7 +15,10 @@ index.html: $(OUT)
 	pandoc -s index.html -o index.html --metadata pagetitle="blog"
 
 clean:
-	rm -f static/*
+	rm -f static/*.html
+
+install: requirements.txt
+	ln -s -f ./hooks/pre-commit ./.git/hooks/pre-commit
 
 requirements.txt:
 	pip install -r requirements.txt

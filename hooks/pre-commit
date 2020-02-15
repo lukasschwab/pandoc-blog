@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Automatically build all static assets before committing.
+make all
