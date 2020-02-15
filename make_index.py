@@ -1,9 +1,13 @@
 from os import listdir
 
-STATIC_FILES_PATH = "./static"
+STATIC_FILES_PATH = "./gen"
 
 def linkToPost(static_post):
-    return '<a href="static/{}">{}</a>'.format(static_post, static_post)
+    return '<a href="{}/{}">{}</a>'.format(
+        STATIC_FILES_PATH,
+        static_post,
+        static_post
+    )
 
 # TODO: sort by Markdown metadata date.
 # TODO: description list with summaries. Can use the abstract YAML attr.
