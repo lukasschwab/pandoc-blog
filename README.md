@@ -44,7 +44,6 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 
 + Want to change how the whole generated site is styled?<br>Modify `styles/common.css`.
 
-## Next steps
+## To do
 
-+ RSS feed!
-+ More styles, especially for things like tables, but these can go in a personal directory rather than the generator directory.
+`make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.

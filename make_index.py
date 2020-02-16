@@ -7,20 +7,29 @@ from os import listdir
 import frontmatter
 from datetime import datetime
 from dateutil.parser import parse
+import pytz
+import jsonfeed as jf
 
 MARKDOWN_POSTS_PATH = "./posts"
 STATIC_FILES_PATH = "./gen/"
+
+isNaive = lambda d: d.tzinfo is None or d.tzinfo.utcoffset(d) is None
 
 def getMetadata(static_post):
     post = frontmatter.load(MARKDOWN_POSTS_PATH + "/" + static_post)
     out = {}
     out['title'] = post.get('title', static_post[:-3])
-    # NOTE: stripping time zone info is a bodge.
+
     if 'date' in post:
-        out['date'] = parse(post.get('date')).replace(tzinfo=None)
+        out['date'] = parse(post.get('date'))
     else:
         print("[WARN] no date for post", static_post)
-        out['date'] = datetime.now().replace(tzinfo=None)
+        out['date'] = datetime.now(tz=pytz.UTC)
+    # If we don't have timezone info, we assume UTC.
+    if isNaive(out['date']):
+        print("[WARN] No time zone for date; assuming UTC")
+        out['date'] = out['date'].replace(tzinfo=pytz.UTC)
+
     out['abstract'] = post.get('abstract')
     out['filename'] = static_post
     return out
@@ -47,3 +56,27 @@ with open("./index.md", "w") as f:
                     metadata['abstract']
                 ))
             f.write("\n")
+
+# Construct a JSON feed.
+feed = jf.Feed("blog")
+for metadata in metadatas:
+    url = getStaticFilename(metadata)
+    item = jf.Item(
+        url, # url as primary ID.
+        url=url,
+        title=metadata['title']
+    )
+    # These components may or may not be defined.
+    if metadata['date']:
+        # isoformat is RFC-compatible iff the datetime is timezone-aware.
+        item.date_published = metadata['date'].isoformat()
+    # Junky default
+    item.content_text = metadata['title']
+    if metadata['abstract']:
+        item.summary = metadata['abstract']
+        item.content_text = metadata['abstract']
+
+    feed.items.append(item)
+
+with open("./feed.json", "w") as f:
+    f.write(feed.toJSON())
