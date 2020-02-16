@@ -12,9 +12,9 @@ Putting the "bodge" back in "blog:" Pandoc-driven static site generation.
 
 1. Clone this repository.
 2. Write Pandoc-compatible Markdown files in `posts`. These should include YAML frontmatter for generating the index:
-  + `title`: a human-readable title for this post.
-  + `date`: some `dateutil`-parseable date format.
-  + `abstract`: a summary you want to appear on the index. This can include valid Pandoc markdown.
+    + `title`: a human-readable title for this post.
+    + `date`: some `dateutil`-parseable date format.
+    + `abstract`: a summary you want to appear on the index. This can include valid Pandoc markdown.
 3. Run `make all` to build an HTMl file for each Markdown page and generate `index.html`.
 
 ### Utilities
@@ -43,3 +43,8 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 + Want to change how the index is styled?<br>Modify `styles/index.css`.
 
 + Want to change how the whole generated site is styled?<br>Modify `styles/common.css`.
+
+## Next steps
+
++ RSS feed!
++ More styles, especially for things like tables, but these can go in a personal directory rather than the generator directory.
