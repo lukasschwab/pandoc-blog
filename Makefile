@@ -5,15 +5,13 @@ OUT=$(patsubst posts/%.md, gen/%.html, $(POSTS))
 
 all: $(OUT) index.html
 
-# TODO: template.
 gen/%.html: posts/%.md
-	pandoc -s $< -o $@ --template templates/post.html --css="../common.css"
+	pandoc -s $< -o $@ --template templates/post.html --css="../styles/common.css"
 
-# TODO: template.
 index.html: $(OUT)
-	# Building index.html.
 	python3 make_index.py
-	pandoc -s index.html -o index.html --template templates/index.html  --css="./common.css"
+	pandoc -s index.md -o index.html --template templates/index.html  --css="./styles/common.css" --css="./styles/index.css"
+	rm index.md
 
 open: all
 	open index.html

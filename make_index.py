@@ -1,20 +1,42 @@
 from os import listdir
+import frontmatter
+from datetime import datetime
+from dateutil.parser import parse
 
-STATIC_FILES_PATH = "./gen"
+MARKDOWN_POSTS_PATH = "./posts"
+STATIC_FILES_PATH = "./gen/"
 
-def linkToPost(static_post):
-    return '<a href="{}/{}">{}</a>'.format(
-        STATIC_FILES_PATH,
-        static_post,
-        static_post
-    )
+def getMetadata(static_post):
+    post = frontmatter.load(MARKDOWN_POSTS_PATH + "/" + static_post)
+    out = {}
+    out['title'] = post.get('title', static_post[:-3])
+    # NOTE: stripping time zone info is a bodge.
+    if 'date' in post:
+        out['date'] = parse(post.get('date')).replace(tzinfo=None)
+    else:
+        print("[WARN] no date for post", static_post)
+        out['date'] = datetime.now().replace(tzinfo=None)
+    out['abstract'] = post.get('abstract')
+    out['filename'] = static_post
+    return out
 
-# TODO: sort by Markdown metadata date.
-# TODO: description list with summaries. Can use the abstract YAML attr.
-if __name__ == "__main__":
-    static_posts = listdir(STATIC_FILES_PATH)
-    with open("./index.html", "w") as f:
-        f.write("<ol>\n")
-        for static_post in static_posts:
-            f.write("<li>{}</li>\n".format(linkToPost(static_post)))
-        f.write("</ol>\n")
+def getStaticFilename(post_metadata):
+    return STATIC_FILES_PATH + post_metadata['filename'][:-3] + ".html"
+
+static_posts = listdir(MARKDOWN_POSTS_PATH)
+metadatas = [getMetadata(fn) for fn in static_posts]
+metadatas.sort(key=lambda md: md['date'], reverse=True)
+
+with open("./index.md", "w") as f:
+    if len(metadatas) == 0:
+        f.write("There aren't any posts yet.\n")
+    else:
+        for metadata in metadatas:
+            f.write("## [{}]({})\n".format(
+                metadata['title'],
+                getStaticFilename(metadata)
+            ))
+            # f.write(": {}\n".format(metadata['date'].strftime("%Y-%m-%d")))
+            if metadata['abstract']:
+                f.write("{}\n".format(metadata['abstract']))
+            f.write("\n")
