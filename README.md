@@ -22,23 +22,24 @@ Putting the "bodge" back in "blog:" Pandoc-driven static site generation.
 + `make requirements.txt`: install dependencies for `make_index.py`.
 + `make hook`: configure a git hook to run `make all` before each commit (so each commit contains an up-to-date static site).
 
-## Notes
+## How it works
 
-Instead of generating an index with a script, I could use a manually-maintained index with a definition list:
+`Makefile` is the most robust guide, but here's a high-level overview.
 
-```markdown
-# blog
+1. `pandoc` transforms each Markdown post in `posts` into a static HTML file in `gen`. The HTML is structured using `templates/post.html` and styled with `styles/shared.css`.
 
-Here's a definition list
-: And here's the summary for the definition list. Who knows if it'll work?
+2. `make_index.py` reads the YAML frontmatter of every Markdown post in `posts` and transforms this into an intermediate Markdown document of headers and metadata, `index.md`.
 
-[Here's a link](./gen/some-post.html)
-: And here's a definition for the link.
-```
+3. `pandoc` transforms `index.md` into `index.html`. Unlike the posts, this index file is structured using `templates/index.html` and it's styled with *both* `styles/shared.css` and `styles/index.css` (with the latter styles overriding the former.
 
-Next to-do item is probably to improve the rendered index––parsing YAML frontmatter to sort, etc. Perhaps there's index-customizability stuff here too, but I think it's fine to leave that in the template rather than introducing complexity.
+## Customization
 
-After that, can think about more CSS:
+A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates (like `make_index.py` uses for the time being) are antipatterns.
 
-+ Font differentiation.
-+ Somewhat muted colors.
++ Want to change how posts are represented in the index?<br>Modify `make_index.py`.
+
++ Want to add static elements, e.g. a section with "about me" info or social links?<br>Modify `templates/index.html` to only change the index.<br>Modify `templates/post.html` to only change the post pages.
+
++ Want to change how the index is styled?<br>Modify `styles/index.css`.
+
++ Want to change how the whole generated site is styled?<br>Modify `styles/common.css`.

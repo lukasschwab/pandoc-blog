@@ -1,3 +1,8 @@
+# make_index.py generates a Markdown document representing the blog index.
+# Ideally, this should only contain the list of links to posts and whatever
+# metadata should be listed in those posts. For header/footer information, it
+# will probably be easier to modify templates/index.html.
+
 from os import listdir
 import frontmatter
 from datetime import datetime
@@ -36,7 +41,9 @@ with open("./index.md", "w") as f:
                 metadata['title'],
                 getStaticFilename(metadata)
             ))
-            # f.write(": {}\n".format(metadata['date'].strftime("%Y-%m-%d")))
             if metadata['abstract']:
-                f.write("{}\n".format(metadata['abstract']))
+                f.write("{} &middot; {}\n".format(
+                    metadata['date'].strftime("%Y-%m-%d"),
+                    metadata['abstract']
+                ))
             f.write("\n")
