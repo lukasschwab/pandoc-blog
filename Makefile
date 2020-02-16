@@ -22,5 +22,6 @@ clean:
 hook:
 	ln -s -f ../../.hooks/pre-commit ./.git/hooks/pre-commit
 
-requirements.txt:
+.PHONY: install
+install:
 	pip install -r requirements.txt
