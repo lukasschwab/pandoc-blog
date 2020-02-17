@@ -1,12 +1,16 @@
 # pandoc-blog
 
-Putting the "bodge" back in "blog:" Pandoc-driven static site generation.
+Pandoc-driven static site generation.
+
+I've avoided writing CSS beyond some very basic readability improvements/demonstrating that CSS can be added. The goal here is just to populate well-structured HTML documents and a generated JSON feed. [View a demo site.](http://lukasschwab.me/pandoc-blog/index.html)
+
+Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 
 ## Requirements
 
 + `pandoc`
 + Python 3
-+ Python dependencies listed in `requirements.txt`
++ Python dependencies listed in `requirements.txt`. Install them with `make install`.
 
 ## Usage
 
@@ -45,7 +49,5 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 + Want to change how the whole generated site is styled?<br>Modify `styles/common.css`.
 
 ## To do
-
-+ An example site on a `gh-pages` branch.
 
 + `make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
