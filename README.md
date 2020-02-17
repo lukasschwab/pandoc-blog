@@ -1,6 +1,6 @@
 # pandoc-blog
 
-Pandoc-driven static site generation.
+This is a *very* basic Pandoc static site generator.
 
 I've avoided writing CSS beyond some very basic readability improvements/demonstrating that CSS can be added. The goal here is just to populate well-structured HTML documents and a generated JSON feed. [View a demo site.](http://lukasschwab.me/pandoc-blog/index.html)
 
@@ -50,4 +50,4 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 
 ## To do
 
-+ `make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
+`make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
