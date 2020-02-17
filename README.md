@@ -13,7 +13,7 @@ Putting the "bodge" back in "blog:" Pandoc-driven static site generation.
 1. Clone this repository.
 2. Write Pandoc-compatible Markdown files in `posts`. These should include YAML frontmatter for generating the index:
     + `title`: a human-readable title for this post.
-    + `date`: some `dateutil`-parseable date format.
+    + `date`: an ISO 8601 date.
     + `abstract`: a summary you want to appear on the index. This can include valid Pandoc markdown.
 3. Run `make all` to build an HTMl file for each Markdown page and generate `index.html`.
 
@@ -46,4 +46,6 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 
 ## To do
 
-`make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
++ An example site on a `gh-pages` branch.
+
++ `make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.

@@ -21,7 +21,8 @@ def getMetadata(static_post):
     out['title'] = post.get('title', static_post[:-3])
 
     if 'date' in post:
-        out['date'] = parse(post.get('date'))
+        # ISO 8601 dates are automatically datetimes.
+        out['date'] = post.get('date')
     else:
         print("[WARN] no date for post", static_post)
         out['date'] = datetime.now(tz=pytz.UTC)
