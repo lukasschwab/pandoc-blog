@@ -13,8 +13,14 @@ index.html: $(OUT)
 	pandoc -s index.md -o index.html --template templates/index.html  --css="./styles/common.css" --css="./styles/index.css"
 	rm index.md
 
+# Shortcuts
+
 open: all
 	open index.html
+
+# Get an ISO 8601 date.
+date:
+	date -u +"%Y-%m-%dT%H:%M:%SZ"
 
 clean:
 	rm -f gen/*.html
