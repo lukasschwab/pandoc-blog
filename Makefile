@@ -6,9 +6,9 @@ OUT=$(patsubst posts/%.md, gen/%.html, $(POSTS))
 all: $(OUT) index.html
 
 gen/%.html: posts/%.md
-	pandoc -s $< -o $@ --template templates/post.html --css="../styles/common.css"
+	pandoc -f markdown+fenced_divs -s $< -o $@ --template templates/post.html --css="../styles/common.css"
 
-index.html: $(OUT)
+index.html: $(OUT) make_index.py
 	python3 make_index.py
 	pandoc -s index.md -o index.html --template templates/index.html  --css="./styles/common.css" --css="./styles/index.css"
 	rm index.md
@@ -24,6 +24,7 @@ date:
 
 clean:
 	rm -f gen/*.html
+	rm -f index.html
 
 hook:
 	ln -s -f ../../.hooks/pre-commit ./.git/hooks/pre-commit
