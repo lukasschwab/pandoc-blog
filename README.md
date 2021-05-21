@@ -48,6 +48,44 @@ A general rule of thumb: changes to the HTML are predictable; changes to pre-`pa
 
 + Want to change how the whole generated site is styled?<br>Modify `styles/common.css`.
 
+### Fenced `div`s
+
+`pandoc-blog` converts Markdown to HTML with [`pandoc`'s `fenced_divs` extension](https://pandoc.org/MANUAL.html#extension-fenced_divs) enabled. You can use this to define a `div`––complete with HTML attributes––in your markup:
+
+```markdown
+This text is outside of the fenced `div`.
+
+::: {.addendum date="Oct. 12, 2020"}
+
+This text is in a div with class `addendum` and attribute `date="Oct. 12, 2020"`.
+
+:::
+
+This text is outside of the fenced `div`.
+```
+
+You can modify [styles/common.css](styles/common.css) to apply styles to those fenced `div`s and their children:
+
+```css
+/* Style addenda. */
+div.addendum {
+  border: 1px solid grey;
+  padding: 0 1em;
+}
+
+/* Include `date` attribute above addenda. */
+div.addendum::before {
+  display: block;
+  text-align: center;
+  color: grey;
+  width: 100%;
+  margin-top: 1em;
+  content: "Addendum " attr(data-date);
+}
+```
+
 ## To do
 
-`make_index.py` is super brittle. It should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
++ `make_index.py` should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
+
++ Consider rolling table styles and utility classes into this repo.
