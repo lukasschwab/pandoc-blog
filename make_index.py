@@ -32,6 +32,7 @@ def getMetadata(static_post):
         out['date'] = out['date'].replace(tzinfo=pytz.UTC)
 
     out['abstract'] = post.get('abstract')
+    out['draft'] = post.get('draft')
     out['filename'] = static_post
     return out
 
@@ -40,6 +41,8 @@ def getStaticFilename(post_metadata):
 
 static_posts = listdir(MARKDOWN_POSTS_PATH)
 metadatas = [getMetadata(fn) for fn in static_posts]
+# Don't index drafts.
+metadatas = [m for m in metadatas if not m['draft']]
 metadatas.sort(key=lambda md: md['date'], reverse=True)
 
 with open("./index.md", "w") as f:
@@ -53,7 +56,7 @@ with open("./index.md", "w") as f:
             ))
             if metadata['abstract']:
                 f.write("{} &middot; {}\n".format(
-                    metadata['date'].strftime("%Y-%m-%d"),
+                    metadata['date'].strftime("%B %d, %Y"),
                     metadata['abstract']
                 ))
             f.write("\n")
@@ -71,13 +74,16 @@ for metadata in metadatas:
     if metadata['date']:
         # isoformat is RFC-compatible iff the datetime is timezone-aware.
         item.date_published = metadata['date'].isoformat()
-    # Junky default
-    item.content_text = metadata['title']
+    # Set abstract if available.
     if metadata['abstract']:
         item.summary = metadata['abstract']
-        item.content_text = metadata['abstract']
+    # Set content_html to full generated contents.
+    # NOTE: relative links (incl. img sources) won't work in a feed reader, but
+    # this is a better best effort than just including abstracts.
+    with open(url, "r") as html:
+        item.content_html = html.read()
 
     feed.items.append(item)
 
 with open("./feed.json", "w") as f:
-    f.write(feed.toJSON())
+    f.write(feed.toJSON(indent="\t"))
