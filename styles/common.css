@@ -28,12 +28,21 @@ blockquote, div.sourceCode {
   padding: 0.5em 10px;
 }
 
+p > code, li > code {
+  padding: 1px 3px;
+  border-radius: 3px;
+  background-color: #f0f0f0;
+}
+
+.math.inline {
+  white-space: nowrap;
+}
+
 img {
   max-width: 100%;
 }
 
 /* Prevent subscripts, superscripts from changing line height. */
-
 sup, sub {
   vertical-align: baseline;
   position: relative;
