@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -189,11 +190,17 @@ func generateFeed(posts []postMeta) error {
 	feed := jsonfeed.NewFeed("blog", items)
 	feed.Expired = false
 
-	out, err := feed.ToJSON()
-	if err != nil {
+	// Use a JSON encoder instead of feed.ToJSON() to get
+	// tab-indented output with unescaped HTML, matching the
+	// original feed format.
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "\t")
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(feed); err != nil {
 		return err
 	}
-	return os.WriteFile(feedFile, out, 0644)
+	return os.WriteFile(feedFile, buf.Bytes(), 0644)
 }
 
 func main() {
