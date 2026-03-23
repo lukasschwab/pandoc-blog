@@ -30,6 +30,8 @@ const (
 	indexTemplate = "templates/index.html"
 	// feedFile is the generated JSON Feed file.
 	feedFile = "feed.json"
+	// feedTitle is the title of the JSON Feed.
+	feedTitle = "blog"
 )
 
 // postFrontmatter represents the YAML front matter in a Markdown post.
@@ -136,6 +138,7 @@ func buildIndex(markdown []byte) error {
 		"-s",
 		"-f", "markdown",
 		"-o", indexHTML,
+		"--metadata", "title=index",
 		"--template", indexTemplate,
 		"--css=./styles/common.css",
 		"--css=./styles/index.css",
@@ -180,7 +183,7 @@ func generateFeed(posts []postMeta) error {
 		items = append(items, item)
 	}
 
-	feed := jsonfeed.NewFeed("blog", items)
+	feed := jsonfeed.NewFeed(feedTitle, items)
 	feed.Expired = false
 
 	// Use a JSON encoder instead of feed.ToJSON() to get
