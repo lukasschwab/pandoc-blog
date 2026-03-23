@@ -9,7 +9,7 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 ## Requirements
 
 + `pandoc`
-+ Go 1.22+
++ Go 1.26.1+
 
 ## Usage
 
@@ -23,22 +23,25 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 
 ### Utilities
 
-+ `make build`: compile the Go binary.
-+ `make clean`: remove generated files and the binary.
++ `make date`: get an ISO 8601 date for frontmatter.
++ `make clean`: remove generated files and the Go binary.
 + `make hook`: configure a git hook to run `make all` before each commit (so each commit contains an up-to-date static site).
 
 ## How it works
 
-`main.go` is a single Go program that replaces the old `make_index.py` + `Makefile` pipeline:
+`Makefile` is the most robust guide, but here's a high-level overview.
 
-1. It reads all `.md` files in `posts/`, parses their YAML frontmatter.
-2. It shells out to `pandoc` to convert each post to HTML in `gen/`, using `templates/post.html` and `styles/common.css`.
-3. It generates an intermediate `index.md` with links and metadata for all non-draft posts (sorted newest-first), then runs `pandoc` to produce `index.html` using `templates/index.html`.
-4. It generates `feed.json` (JSON Feed 1.1) with the full HTML content of each post.
+1. `pandoc` transforms each Markdown post in `posts` into a static HTML file in `gen`. The HTML is structured using `templates/post.html` and styled with `styles/common.css`.
+
+2. `main.go` reads the YAML frontmatter of every Markdown post in `posts` (using [adrg/frontmatter](https://github.com/adrg/frontmatter)) and generates an intermediate `index.md` with links and metadata for all non-draft posts, sorted newest-first.
+
+3. `pandoc` transforms `index.md` into `index.html`. Unlike the posts, this index file is structured using `templates/index.html` and it's styled with *both* `styles/common.css` and `styles/index.css` (with the latter styles overriding the former).
+
+4. `main.go` generates `feed.json` ([JSON Feed 1.1](https://jsonfeed.org/version/1.1)) with the full HTML content of each post, using [go-jsonfeed](https://github.com/lukasschwab/go-jsonfeed).
 
 ## Customization
 
-A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates are antipatterns.
+A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates (like `main.go` uses for the index) are antipatterns, but they do allow pandoc markdown in post titles and abstracts.
 
 + Want to change how posts are represented in the index?<br>Modify `main.go` (`generateIndexMD`).
 
@@ -83,3 +86,9 @@ div.addendum::before {
   content: "Addendum " attr(data-date);
 }
 ```
+
+## To do
+
++ Consider replacing the Markdown intermediate for the index with a Go template, removing the `pandoc` dependency for index generation. The Markdown intermediate does allow pandoc markdown in titles and abstracts, which is a meaningful advantage.
+
++ Consider rolling table styles and utility classes into this repo.

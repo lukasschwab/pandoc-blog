@@ -1,8 +1,5 @@
-# Generated site
-gen/*.html
-index.html
+# Intermediate Markdown
 index.md
-feed.json
 
 # Go binary
 pandoc-blog

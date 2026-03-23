@@ -1,8 +1,18 @@
-all: build
-	./pandoc-blog
+POSTS=$(shell find posts/*)
+# OUT contains all names of static HTML targets corresponding to markdown files
+# in the posts directory.
+OUT=$(patsubst posts/%.md, gen/%.html, $(POSTS))
 
-build:
+all: $(OUT) index.html
+
+gen/%.html: posts/%.md
+	pandoc -f markdown+fenced_divs -s $< -o $@ --template templates/post.html --css="../styles/common.css"
+
+pandoc-blog: main.go go.mod go.sum
 	go build -o pandoc-blog .
+
+index.html: $(OUT) pandoc-blog
+	./pandoc-blog
 
 # Shortcuts
 
@@ -22,4 +32,4 @@ clean:
 hook:
 	ln -s -f ../../.hooks/pre-commit ./.git/hooks/pre-commit
 
-.PHONY: all build open date clean hook
+.PHONY: open date clean hook

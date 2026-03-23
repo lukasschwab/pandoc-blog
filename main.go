@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -15,22 +14,27 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	"github.com/adrg/frontmatter"
+	jsonfeed "github.com/lukasschwab/go-jsonfeed"
 )
 
 const (
-	postsDir      = "posts"
-	genDir        = "gen"
-	templatesDir  = "templates"
-	postTemplate  = "templates/post.html"
+	// postsDir is the directory containing Markdown source posts.
+	postsDir = "posts"
+	// genDir is the directory for generated per-post HTML files.
+	genDir = "gen"
+	// indexMD is the intermediate Markdown file for the index page.
+	indexMD = "index.md"
+	// indexHTML is the generated index page.
+	indexHTML = "index.html"
+	// indexTemplate is the pandoc template for the index page.
 	indexTemplate = "templates/index.html"
-	indexMD       = "index.md"
-	indexHTML     = "index.html"
-	feedFile      = "feed.json"
+	// feedFile is the generated JSON Feed file.
+	feedFile = "feed.json"
 )
 
-// frontmatter represents the YAML front matter in a Markdown post.
-type frontmatter struct {
+// postFrontmatter represents the YAML front matter in a Markdown post.
+type postFrontmatter struct {
 	Title    string    `yaml:"title"`
 	Author   string    `yaml:"author"`
 	Date     time.Time `yaml:"date"`
@@ -38,50 +42,35 @@ type frontmatter struct {
 	Draft    bool      `yaml:"draft"`
 }
 
-// postMeta holds parsed metadata plus the source filename.
+// postMeta holds parsed front matter metadata plus the source filename.
 type postMeta struct {
-	frontmatter
+	postFrontmatter
 	Filename string // e.g. "example-post.md"
 }
 
 // staticPath returns the generated HTML path for this post,
-// prefixed with "./" for use in URLs.
+// prefixed with "./" for use in URLs and relative references.
 func (p postMeta) staticPath() string {
 	base := strings.TrimSuffix(p.Filename, ".md")
 	return "./" + genDir + "/" + base + ".html"
 }
 
-// parseFrontmatter extracts YAML front matter from a Markdown file.
-// It expects the file to start with "---\n" and end the front matter
-// block with another "---\n".
-func parseFrontmatter(path string) (frontmatter, error) {
-	data, err := os.ReadFile(path)
+// parsePost reads a Markdown file and extracts its YAML front matter
+// using the adrg/frontmatter library. If no date is provided, the
+// current time in UTC is used as a fallback.
+func parsePost(path string) (postFrontmatter, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return frontmatter{}, err
+		return postFrontmatter{}, err
+	}
+	defer f.Close()
+
+	var fm postFrontmatter
+	if _, err := frontmatter.Parse(f, &fm); err != nil {
+		return postFrontmatter{}, fmt.Errorf("%s: %w", path, err)
 	}
 
-	content := string(data)
-	if !strings.HasPrefix(content, "---") {
-		return frontmatter{}, fmt.Errorf("%s: no front matter found", path)
-	}
-
-	// Find the closing ---.
-	end := strings.Index(content[3:], "\n---")
-	if end == -1 {
-		return frontmatter{}, fmt.Errorf("%s: unclosed front matter", path)
-	}
-
-	yamlBlock := content[4 : 3+end] // skip the opening "---\n"
-
-	var fm frontmatter
-	if err := yaml.Unmarshal([]byte(yamlBlock), &fm); err != nil {
-		return frontmatter{}, fmt.Errorf("%s: %w", path, err)
-	}
-
-	// If the parsed date has no timezone info (zero location), assume UTC.
-	if fm.Date.Location() == time.UTC {
-		// Already UTC, fine.
-	} else if fm.Date.IsZero() {
+	if fm.Date.IsZero() {
 		log.Printf("[WARN] no date for post %s; using now", path)
 		fm.Date = time.Now().UTC()
 	}
@@ -89,7 +78,8 @@ func parseFrontmatter(path string) (frontmatter, error) {
 	return fm, nil
 }
 
-// loadPosts reads all .md files from the posts directory.
+// loadPosts reads all .md files from the posts directory and returns
+// their parsed metadata. Files that fail to parse are logged and skipped.
 func loadPosts() ([]postMeta, error) {
 	entries, err := os.ReadDir(postsDir)
 	if err != nil {
@@ -101,7 +91,7 @@ func loadPosts() ([]postMeta, error) {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
 			continue
 		}
-		fm, err := parseFrontmatter(filepath.Join(postsDir, e.Name()))
+		fm, err := parsePost(filepath.Join(postsDir, e.Name()))
 		if err != nil {
 			log.Printf("[WARN] skipping %s: %v", e.Name(), err)
 			continue
@@ -110,38 +100,17 @@ func loadPosts() ([]postMeta, error) {
 			fm.Title = strings.TrimSuffix(e.Name(), ".md")
 		}
 		posts = append(posts, postMeta{
-			frontmatter: fm,
-			Filename:    e.Name(),
+			postFrontmatter: fm,
+			Filename:        e.Name(),
 		})
 	}
 	return posts, nil
 }
 
-// runPandoc shells out to pandoc with the given arguments.
-func runPandoc(args ...string) error {
-	cmd := exec.Command("pandoc", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("pandoc %s: %w", strings.Join(args, " "), err)
-	}
-	return nil
-}
-
-// buildPost converts a single Markdown post to HTML via pandoc.
-func buildPost(filename string) error {
-	src := filepath.Join(postsDir, filename)
-	dst := filepath.Join(genDir, strings.TrimSuffix(filename, ".md")+".html")
-	return runPandoc(
-		"-f", "markdown+fenced_divs",
-		"-s", src,
-		"-o", dst,
-		"--template", postTemplate,
-		"--css=../styles/common.css",
-	)
-}
-
 // generateIndexMD writes the intermediate index.md from post metadata.
+// Each non-draft post is rendered as a Markdown heading linking to its
+// generated HTML, with an optional date and abstract line. This
+// Markdown intermediate allows pandoc markdown in titles and abstracts.
 func generateIndexMD(posts []postMeta) error {
 	var buf bytes.Buffer
 	if len(posts) == 0 {
@@ -161,7 +130,19 @@ func generateIndexMD(posts []postMeta) error {
 	return os.WriteFile(indexMD, buf.Bytes(), 0644)
 }
 
-// buildIndex runs pandoc to convert index.md to index.html, then cleans up.
+// runPandoc shells out to pandoc with the given arguments.
+func runPandoc(args ...string) error {
+	cmd := exec.Command("pandoc", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("pandoc %s: %w", strings.Join(args, " "), err)
+	}
+	return nil
+}
+
+// buildIndex runs pandoc to convert index.md to index.html using the
+// index template, then removes the intermediate index.md.
 func buildIndex() error {
 	err := runPandoc(
 		"-s", indexMD,
@@ -174,40 +155,17 @@ func buildIndex() error {
 	return err
 }
 
-// --- JSON Feed types (jsonfeed.org/version/1.1) ---
-
-type jsonFeed struct {
-	Version string         `json:"version"`
-	Title   string         `json:"title"`
-	Expired bool           `json:"expired"`
-	Items   []jsonFeedItem `json:"items"`
-}
-
-type jsonFeedItem struct {
-	ID            string `json:"id"`
-	URL           string `json:"url"`
-	Title         string `json:"title"`
-	ContentHTML   string `json:"content_html,omitempty"`
-	Summary       string `json:"summary,omitempty"`
-	DatePublished string `json:"date_published,omitempty"`
-}
-
-// generateFeed writes feed.json.
+// generateFeed writes feed.json using the go-jsonfeed library.
+// Each published post becomes a feed item with its full generated HTML
+// embedded as content_html.
 func generateFeed(posts []postMeta) error {
-	feed := jsonFeed{
-		Version: "https://jsonfeed.org/version/1.1",
-		Title:   "blog",
-		Expired: false,
-	}
-
+	var items []jsonfeed.Item
 	for _, p := range posts {
 		url := p.staticPath()
 
-		item := jsonFeedItem{
-			ID:    url,
-			URL:   url,
-			Title: p.Title,
-		}
+		item := jsonfeed.NewItem(url)
+		item.URL = url
+		item.Title = p.Title
 
 		if !p.Date.IsZero() {
 			item.DatePublished = p.Date.Format(time.RFC3339)
@@ -217,15 +175,21 @@ func generateFeed(posts []postMeta) error {
 		}
 
 		// Read the generated HTML to embed in the feed.
-		htmlPath := p.staticPath()
+		// NOTE: relative links (incl. img sources) won't work in a feed
+		// reader, but this is a better best effort than just including
+		// abstracts.
+		htmlPath := filepath.Join(genDir, strings.TrimSuffix(p.Filename, ".md")+".html")
 		if data, err := os.ReadFile(htmlPath); err == nil {
 			item.ContentHTML = string(data)
 		}
 
-		feed.Items = append(feed.Items, item)
+		items = append(items, item)
 	}
 
-	out, err := json.MarshalIndent(feed, "", "\t")
+	feed := jsonfeed.NewFeed("blog", items)
+	feed.Expired = false
+
+	out, err := feed.ToJSON()
 	if err != nil {
 		return err
 	}
@@ -244,14 +208,6 @@ func main() {
 	posts, err := loadPosts()
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// Build each post.
-	for _, p := range posts {
-		log.Printf("building %s", p.Filename)
-		if err := buildPost(p.Filename); err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	// Filter drafts and sort by date descending for index/feed.
@@ -274,7 +230,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Generate JSON feed.
+	// Generate JSON feed (post HTML files must already exist in gen/).
 	log.Println("generating feed.json")
 	if err := generateFeed(published); err != nil {
 		log.Fatal(err)
