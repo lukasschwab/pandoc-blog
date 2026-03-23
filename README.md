@@ -9,8 +9,7 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 ## Requirements
 
 + `pandoc`
-+ Python 3
-+ Python dependencies listed in `requirements.txt`. Install them with `make install`.
++ Go 1.22+
 
 ## Usage
 
@@ -19,28 +18,29 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
     + `title`: a human-readable title for this post.
     + `date`: an ISO 8601 date (`make date`).
     + `abstract`: a summary you want to appear on the index. This can include valid Pandoc markdown.
-3. Run `make all` to build an HTMl file for each Markdown page and generate `index.html`.
+    + `draft`: set to `true` to exclude from the index and feed.
+3. Run `make all` to build an HTML file for each Markdown page, generate `index.html`, and produce `feed.json`.
 
 ### Utilities
 
-+ `make requirements.txt`: install dependencies for `make_index.py`.
++ `make build`: compile the Go binary.
++ `make clean`: remove generated files and the binary.
 + `make hook`: configure a git hook to run `make all` before each commit (so each commit contains an up-to-date static site).
 
 ## How it works
 
-`Makefile` is the most robust guide, but here's a high-level overview.
+`main.go` is a single Go program that replaces the old `make_index.py` + `Makefile` pipeline:
 
-1. `pandoc` transforms each Markdown post in `posts` into a static HTML file in `gen`. The HTML is structured using `templates/post.html` and styled with `styles/shared.css`.
-
-2. `make_index.py` reads the YAML frontmatter of every Markdown post in `posts` and transforms this into an intermediate Markdown document of headers and metadata, `index.md`.
-
-3. `pandoc` transforms `index.md` into `index.html`. Unlike the posts, this index file is structured using `templates/index.html` and it's styled with *both* `styles/shared.css` and `styles/index.css` (with the latter styles overriding the former.
+1. It reads all `.md` files in `posts/`, parses their YAML frontmatter.
+2. It shells out to `pandoc` to convert each post to HTML in `gen/`, using `templates/post.html` and `styles/common.css`.
+3. It generates an intermediate `index.md` with links and metadata for all non-draft posts (sorted newest-first), then runs `pandoc` to produce `index.html` using `templates/index.html`.
+4. It generates `feed.json` (JSON Feed 1.1) with the full HTML content of each post.
 
 ## Customization
 
-A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates (like `make_index.py` uses for the time being) are antipatterns.
+A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates are antipatterns.
 
-+ Want to change how posts are represented in the index?<br>Modify `make_index.py`.
++ Want to change how posts are represented in the index?<br>Modify `main.go` (`generateIndexMD`).
 
 + Want to add static elements, e.g. a section with "about me" info or social links?<br>Modify `templates/index.html` to only change the index.<br>Modify `templates/post.html` to only change the post pages.
 
@@ -83,9 +83,3 @@ div.addendum::before {
   content: "Addendum " attr(data-date);
 }
 ```
-
-## To do
-
-+ `make_index.py` should be extended to read a greater variety of pandoc-supported YAML frontmatter and read full-blog metadata defined in some root YAML file.
-
-+ Consider rolling table styles and utility classes into this repo.

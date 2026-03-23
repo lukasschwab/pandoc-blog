@@ -1,0 +1,8 @@
+# Generated site
+gen/*.html
+index.html
+index.md
+feed.json
+
+# Go binary
+pandoc-blog
