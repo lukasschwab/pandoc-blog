@@ -24,8 +24,6 @@ const (
 	postsDir = "posts"
 	// genDir is the directory for generated per-post HTML files.
 	genDir = "gen"
-	// indexMD is the intermediate Markdown file for the index page.
-	indexMD = "index.md"
 	// indexHTML is the generated index page.
 	indexHTML = "index.html"
 	// indexTemplate is the pandoc template for the index page.
@@ -108,11 +106,11 @@ func loadPosts() ([]postMeta, error) {
 	return posts, nil
 }
 
-// generateIndexMD writes the intermediate index.md from post metadata.
+// indexMarkdown generates index content as Markdown from post metadata.
 // Each non-draft post is rendered as a Markdown heading linking to its
-// generated HTML, with an optional date and abstract line. This
+// generated HTML, with an optional date and abstract line. Using a
 // Markdown intermediate allows pandoc markdown in titles and abstracts.
-func generateIndexMD(posts []postMeta) error {
+func indexMarkdown(posts []postMeta) []byte {
 	var buf bytes.Buffer
 	if len(posts) == 0 {
 		buf.WriteString("There aren't any posts yet.\n")
@@ -128,32 +126,27 @@ func generateIndexMD(posts []postMeta) error {
 			buf.WriteString("\n")
 		}
 	}
-	return os.WriteFile(indexMD, buf.Bytes(), 0644)
+	return buf.Bytes()
 }
 
-// runPandoc shells out to pandoc with the given arguments.
-func runPandoc(args ...string) error {
-	cmd := exec.Command("pandoc", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("pandoc %s: %w", strings.Join(args, " "), err)
-	}
-	return nil
-}
-
-// buildIndex runs pandoc to convert index.md to index.html using the
-// index template, then removes the intermediate index.md.
-func buildIndex() error {
-	err := runPandoc(
-		"-s", indexMD,
+// buildIndex pipes index Markdown to pandoc via stdin to produce
+// index.html, avoiding any intermediate files on disk.
+func buildIndex(markdown []byte) error {
+	cmd := exec.Command("pandoc",
+		"-s",
+		"-f", "markdown",
 		"-o", indexHTML,
 		"--template", indexTemplate,
 		"--css=./styles/common.css",
 		"--css=./styles/index.css",
 	)
-	os.Remove(indexMD) // clean up intermediate file
-	return err
+	cmd.Stdin = bytes.NewReader(markdown)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("pandoc (index): %w", err)
+	}
+	return nil
 }
 
 // generateFeed writes feed.json using the go-jsonfeed library.
@@ -228,12 +221,9 @@ func main() {
 		return published[i].Date.After(published[j].Date)
 	})
 
-	// Generate index.
+	// Generate index by piping Markdown to pandoc.
 	log.Println("generating index")
-	if err := generateIndexMD(published); err != nil {
-		log.Fatal(err)
-	}
-	if err := buildIndex(); err != nil {
+	if err := buildIndex(indexMarkdown(published)); err != nil {
 		log.Fatal(err)
 	}
 

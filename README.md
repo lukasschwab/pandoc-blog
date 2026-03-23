@@ -24,7 +24,7 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 ### Utilities
 
 + `make date`: get an ISO 8601 date for frontmatter.
-+ `make clean`: remove generated files and the Go binary.
++ `make clean`: remove generated files.
 + `make hook`: configure a git hook to run `make all` before each commit (so each commit contains an up-to-date static site).
 
 ## How it works
@@ -33,9 +33,7 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 
 1. `pandoc` transforms each Markdown post in `posts` into a static HTML file in `gen`. The HTML is structured using `templates/post.html` and styled with `styles/common.css`.
 
-2. `main.go` reads the YAML frontmatter of every Markdown post in `posts` (using [adrg/frontmatter](https://github.com/adrg/frontmatter)) and generates an intermediate `index.md` with links and metadata for all non-draft posts, sorted newest-first.
-
-3. `pandoc` transforms `index.md` into `index.html`. Unlike the posts, this index file is structured using `templates/index.html` and it's styled with *both* `styles/common.css` and `styles/index.css` (with the latter styles overriding the former).
+2. `main.go` reads the YAML frontmatter of every Markdown post in `posts` (using [adrg/frontmatter](https://github.com/adrg/frontmatter)), generates index Markdown with links and metadata for all non-draft posts (sorted newest-first), and pipes it to `pandoc` to produce `index.html`. The index file is structured using `templates/index.html` and styled with *both* `styles/common.css` and `styles/index.css` (with the latter styles overriding the former).
 
 4. `main.go` generates `feed.json` ([JSON Feed 1.1](https://jsonfeed.org/version/1.1)) with the full HTML content of each post, using [go-jsonfeed](https://github.com/lukasschwab/go-jsonfeed).
 
