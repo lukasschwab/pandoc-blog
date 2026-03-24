@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/adrg/frontmatter v0.2.0 h1:/DgnNe82o03riBd1S+ZDjd43wAmC6W35q67NHeLkPd4=
 github.com/adrg/frontmatter v0.2.0/go.mod h1:93rQCj3z3ZlwyxxpQioRKC1wDLto4aXHrbqIsnH9wmE=
+github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
+github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/lukasschwab/go-jsonfeed v0.0.0-20230404010820-b3721e75769e h1:lvyk0KS5/nnI62ua+XbEdJofpAYlflVkyxaRr1HBjQY=
 github.com/lukasschwab/go-jsonfeed v0.0.0-20230404010820-b3721e75769e/go.mod h1:KObitYDkkHbmVCNA3Z09QweE0RaIFD4zVvtsuB6LCZ8=
 github.com/lukasschwab/optional v0.0.0-20191006022851-a495ac0ceee7 h1:eNLrJ+nXaJ5ZtQD2vvC7FsaZctbobWll0FSiK4fkIjc=

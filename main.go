@@ -16,23 +16,27 @@ import (
 	"time"
 
 	"github.com/adrg/frontmatter"
+	"github.com/kelseyhightower/envconfig"
 	jsonfeed "github.com/lukasschwab/go-jsonfeed"
 )
 
-const (
-	// postsDir is the directory containing Markdown source posts.
-	postsDir = "posts"
-	// genDir is the directory for generated per-post HTML files.
-	genDir = "gen"
-	// indexHTML is the generated index page.
-	indexHTML = "index.html"
-	// indexTemplate is the pandoc template for the index page.
-	indexTemplate = "templates/index.html"
-	// feedFile is the generated JSON Feed file.
-	feedFile = "feed.json"
-	// feedTitle is the title of the JSON Feed.
-	feedTitle = "blog"
-)
+// config holds all configurable paths and values. Defaults can be
+// overridden via environment variables prefixed with BLOG_, e.g.
+// BLOG_POSTS_DIR, BLOG_FEED_TITLE.
+type config struct {
+	// PostsDir is the directory containing Markdown source posts.
+	PostsDir string `envconfig:"POSTS_DIR" default:"posts"`
+	// GenDir is the directory for generated per-post HTML files.
+	GenDir string `envconfig:"GEN_DIR" default:"gen"`
+	// IndexHTML is the generated index page.
+	IndexHTML string `envconfig:"INDEX_HTML" default:"index.html"`
+	// IndexTemplate is the pandoc template for the index page.
+	IndexTemplate string `envconfig:"INDEX_TEMPLATE" default:"templates/index.html"`
+	// FeedFile is the generated JSON Feed file.
+	FeedFile string `envconfig:"FEED_FILE" default:"feed.json"`
+	// FeedTitle is the title of the JSON Feed.
+	FeedTitle string `envconfig:"FEED_TITLE" default:"blog"`
+}
 
 // postFrontmatter represents the YAML front matter in a Markdown post.
 type postFrontmatter struct {
@@ -51,7 +55,7 @@ type postMeta struct {
 
 // staticPath returns the generated HTML path for this post,
 // prefixed with "./" for use in URLs and relative references.
-func (p postMeta) staticPath() string {
+func (p postMeta) staticPath(genDir string) string {
 	base := strings.TrimSuffix(p.Filename, ".md")
 	return "./" + genDir + "/" + base + ".html"
 }
@@ -81,7 +85,7 @@ func parsePost(path string) (postFrontmatter, error) {
 
 // loadPosts reads all .md files from the posts directory and returns
 // their parsed metadata. Files that fail to parse are logged and skipped.
-func loadPosts() ([]postMeta, error) {
+func loadPosts(postsDir string) ([]postMeta, error) {
 	entries, err := os.ReadDir(postsDir)
 	if err != nil {
 		return nil, err
@@ -112,13 +116,13 @@ func loadPosts() ([]postMeta, error) {
 // Each non-draft post is rendered as a Markdown heading linking to its
 // generated HTML, with an optional date and abstract line. Using a
 // Markdown intermediate allows pandoc markdown in titles and abstracts.
-func indexMarkdown(posts []postMeta) []byte {
+func indexMarkdown(posts []postMeta, genDir string) []byte {
 	var buf bytes.Buffer
 	if len(posts) == 0 {
 		buf.WriteString("There aren't any posts yet.\n")
 	} else {
 		for _, p := range posts {
-			fmt.Fprintf(&buf, "## [%s](%s)\n", p.Title, p.staticPath())
+			fmt.Fprintf(&buf, "## [%s](%s)\n", p.Title, p.staticPath(genDir))
 			if p.Abstract != "" {
 				fmt.Fprintf(&buf, "%s &middot; %s\n",
 					p.Date.Format("January 02, 2006"),
@@ -133,13 +137,13 @@ func indexMarkdown(posts []postMeta) []byte {
 
 // buildIndex pipes index Markdown to pandoc via stdin to produce
 // index.html, avoiding any intermediate files on disk.
-func buildIndex(markdown []byte) error {
+func buildIndex(cfg config, markdown []byte) error {
 	cmd := exec.Command("pandoc",
 		"-s",
 		"-f", "markdown",
-		"-o", indexHTML,
+		"-o", cfg.IndexHTML,
 		"--metadata", "title=index",
-		"--template", indexTemplate,
+		"--template", cfg.IndexTemplate,
 		"--css=./styles/common.css",
 		"--css=./styles/index.css",
 	)
@@ -155,10 +159,10 @@ func buildIndex(markdown []byte) error {
 // generateFeed writes feed.json using the go-jsonfeed library.
 // Each published post becomes a feed item with its full generated HTML
 // embedded as content_html.
-func generateFeed(posts []postMeta) error {
+func generateFeed(cfg config, posts []postMeta) error {
 	var items []jsonfeed.Item
 	for _, p := range posts {
-		url := p.staticPath()
+		url := p.staticPath(cfg.GenDir)
 
 		item := jsonfeed.NewItem(url)
 		item.URL = url
@@ -175,7 +179,7 @@ func generateFeed(posts []postMeta) error {
 		// NOTE: relative links (incl. img sources) won't work in a feed
 		// reader, but this is a better best effort than just including
 		// abstracts.
-		htmlPath := filepath.Join(genDir, strings.TrimSuffix(p.Filename, ".md")+".html")
+		htmlPath := filepath.Join(cfg.GenDir, strings.TrimSuffix(p.Filename, ".md")+".html")
 		if data, err := os.ReadFile(htmlPath); err == nil {
 			item.ContentHTML = string(data)
 		}
@@ -183,7 +187,7 @@ func generateFeed(posts []postMeta) error {
 		items = append(items, item)
 	}
 
-	feed := jsonfeed.NewFeed(feedTitle, items)
+	feed := jsonfeed.NewFeed(cfg.FeedTitle, items)
 	feed.Expired = false
 
 	// Use a JSON encoder instead of feed.ToJSON() to get
@@ -196,19 +200,24 @@ func generateFeed(posts []postMeta) error {
 	if err := enc.Encode(feed); err != nil {
 		return err
 	}
-	return os.WriteFile(feedFile, buf.Bytes(), 0644)
+	return os.WriteFile(cfg.FeedFile, buf.Bytes(), 0644)
 }
 
 func main() {
 	log.SetFlags(0)
 
+	var cfg config
+	if err := envconfig.Process("blog", &cfg); err != nil {
+		log.Fatal(err)
+	}
+
 	// Ensure gen/ exists.
-	if err := os.MkdirAll(genDir, 0755); err != nil {
+	if err := os.MkdirAll(cfg.GenDir, 0755); err != nil {
 		log.Fatal(err)
 	}
 
 	// Load post metadata.
-	posts, err := loadPosts()
+	posts, err := loadPosts(cfg.PostsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -226,13 +235,13 @@ func main() {
 
 	// Generate index by piping Markdown to pandoc.
 	log.Println("generating index")
-	if err := buildIndex(indexMarkdown(published)); err != nil {
+	if err := buildIndex(cfg, indexMarkdown(published, cfg.GenDir)); err != nil {
 		log.Fatal(err)
 	}
 
 	// Generate JSON feed (post HTML files must already exist in gen/).
 	log.Println("generating feed.json")
-	if err := generateFeed(published); err != nil {
+	if err := generateFeed(cfg, published); err != nil {
 		log.Fatal(err)
 	}
 
