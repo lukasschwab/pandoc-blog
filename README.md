@@ -36,6 +36,20 @@ Deeply unattractive out of the box? Yes. Easy to customize? I hope so.
 2. `main.go` reads the YAML frontmatter of every Markdown post in `posts` and transforms this into an intermediate Markdown document of headers and metadata, which it pipes to `pandoc`.
 
 
+## Configuration
+
+Behavior can be customized via environment variables prefixed with `BLOG_`:
+
+| Variable | Default | Description |
+|---|---|---|
+| `BLOG_POSTS_DIR` | `posts` | Directory containing Markdown source posts. |
+| `BLOG_GEN_DIR` | `gen` | Directory for generated per-post HTML files. |
+| `BLOG_INDEX_HTML` | `index.html` | Path for the generated index page. |
+| `BLOG_INDEX_TEMPLATE` | `templates/index.html` | Pandoc template for the index page. |
+| `BLOG_FEED_FILE` | `feed.json` | Path for the generated JSON Feed file. |
+| `BLOG_FEED_TITLE` | `blog` | Title of the JSON Feed. |
+| `BLOG_DOMAIN` | *(empty)* | Base URL of the blog (e.g. `https://example.com`). When set, `home_page_url` and `feed_url` are included in the JSON feed, and item URLs are absolute. When empty, item URLs are relative. |
+
 ## Customization
 
 A general rule of thumb: changes to the HTML are predictable; changes to pre-`pandoc` Markdown are unpredictable. Markdown intermediates (like `main.go` uses for the index) are antipatterns, but they do allow pandoc markdown in post titles and abstracts.
