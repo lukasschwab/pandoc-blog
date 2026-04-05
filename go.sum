@@ -4,10 +4,8 @@ github.com/adrg/frontmatter v0.2.0 h1:/DgnNe82o03riBd1S+ZDjd43wAmC6W35q67NHeLkPd
 github.com/adrg/frontmatter v0.2.0/go.mod h1:93rQCj3z3ZlwyxxpQioRKC1wDLto4aXHrbqIsnH9wmE=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
-github.com/lukasschwab/go-jsonfeed v0.0.0-20230404010820-b3721e75769e h1:lvyk0KS5/nnI62ua+XbEdJofpAYlflVkyxaRr1HBjQY=
-github.com/lukasschwab/go-jsonfeed v0.0.0-20230404010820-b3721e75769e/go.mod h1:KObitYDkkHbmVCNA3Z09QweE0RaIFD4zVvtsuB6LCZ8=
-github.com/lukasschwab/optional v0.0.0-20191006022851-a495ac0ceee7 h1:eNLrJ+nXaJ5ZtQD2vvC7FsaZctbobWll0FSiK4fkIjc=
-github.com/lukasschwab/optional v0.0.0-20191006022851-a495ac0ceee7/go.mod h1:fu5mT6INiB5fjYF74VioT5uKpJvxhfplzPnIDQS9RKM=
+github.com/lukasschwab/go-jsonfeed v0.0.0-20260405014117-912dfa255e52 h1:hFi6U4H6G6OngyZTLyvi4ec5RAagERWfBaNaqAGVMdk=
+github.com/lukasschwab/go-jsonfeed v0.0.0-20260405014117-912dfa255e52/go.mod h1:9yWrmW0lh9AyVvf+taKo4AOYPKLXQf1mh1q5qAIJhXc=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.3.0 h1:clyUAQHOM3G0M3f5vQj7LuJrETvjVot3Z5el9nffUtU=

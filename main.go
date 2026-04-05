@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -19,6 +18,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	jsonfeed "github.com/lukasschwab/go-jsonfeed"
 )
+
+func ptr[T any](v T) *T { return &v }
 
 // config holds all configurable paths and values. Defaults can be
 // overridden via environment variables prefixed with BLOG_, e.g.
@@ -172,14 +173,14 @@ func generateFeed(cfg config, posts []postMeta) error {
 		}
 
 		item := jsonfeed.NewItem(url)
-		item.URL = url
-		item.Title = p.Title
+		item.URL = ptr(url)
+		item.Title = ptr(p.Title)
 
 		if !p.Date.IsZero() {
-			item.DatePublished = p.Date.Format(time.RFC3339)
+			item.DatePublished = ptr(p.Date.Format(time.RFC3339))
 		}
 		if p.Abstract != "" {
-			item.Summary = p.Abstract
+			item.Summary = ptr(p.Abstract)
 		}
 
 		// Read the generated HTML to embed in the feed.
@@ -188,7 +189,7 @@ func generateFeed(cfg config, posts []postMeta) error {
 		// abstracts.
 		htmlPath := filepath.Join(cfg.GenDir, strings.TrimSuffix(p.Filename, ".md")+".html")
 		if data, err := os.ReadFile(htmlPath); err == nil {
-			item.ContentHTML = string(data)
+			item.ContentHTML = ptr(string(data))
 		}
 
 		items = append(items, item)
@@ -196,22 +197,16 @@ func generateFeed(cfg config, posts []postMeta) error {
 
 	feed := jsonfeed.NewFeed(cfg.FeedTitle, items)
 	if cfg.Domain != "" {
-		feed.HomePageURL = cfg.Domain
-		feed.FeedURL = strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile
+		feed.HomePageURL = ptr(cfg.Domain)
+		feed.FeedURL = ptr(strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile)
 	}
-	feed.Expired = false
+	feed.Expired = ptr(false)
 
-	// Use a JSON encoder instead of feed.ToJSON() to get
-	// tab-indented output with unescaped HTML, matching the
-	// original feed format.
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "\t")
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(feed); err != nil {
+	data, err := feed.ToJSON()
+	if err != nil {
 		return err
 	}
-	return os.WriteFile(cfg.FeedFile, buf.Bytes(), 0644)
+	return os.WriteFile(cfg.FeedFile, data, 0644)
 }
 
 func main() {
