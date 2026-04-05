@@ -19,8 +19,6 @@ import (
 	jsonfeed "github.com/lukasschwab/go-jsonfeed"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 // config holds all configurable paths and values. Defaults can be
 // overridden via environment variables prefixed with BLOG_, e.g.
 // BLOG_POSTS_DIR, BLOG_FEED_TITLE.
@@ -173,14 +171,14 @@ func generateFeed(cfg config, posts []postMeta) error {
 		}
 
 		item := jsonfeed.NewItem(url)
-		item.URL = ptr(url)
-		item.Title = ptr(p.Title)
+		item.URL = new(url)
+		item.Title = new(p.Title)
 
 		if !p.Date.IsZero() {
-			item.DatePublished = ptr(p.Date.Format(time.RFC3339))
+			item.DatePublished = new(p.Date.Format(time.RFC3339))
 		}
 		if p.Abstract != "" {
-			item.Summary = ptr(p.Abstract)
+			item.Summary = new(p.Abstract)
 		}
 
 		// Read the generated HTML to embed in the feed.
@@ -189,7 +187,7 @@ func generateFeed(cfg config, posts []postMeta) error {
 		// abstracts.
 		htmlPath := filepath.Join(cfg.GenDir, strings.TrimSuffix(p.Filename, ".md")+".html")
 		if data, err := os.ReadFile(htmlPath); err == nil {
-			item.ContentHTML = ptr(string(data))
+			item.ContentHTML = new(string(data))
 		}
 
 		items = append(items, item)
@@ -197,10 +195,10 @@ func generateFeed(cfg config, posts []postMeta) error {
 
 	feed := jsonfeed.NewFeed(cfg.FeedTitle, items)
 	if cfg.Domain != "" {
-		feed.HomePageURL = ptr(cfg.Domain)
-		feed.FeedURL = ptr(strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile)
+		feed.HomePageURL = new(cfg.Domain)
+		feed.FeedURL = new(strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile)
 	}
-	feed.Expired = ptr(false)
+	feed.Expired = new(false)
 
 	data, err := feed.ToJSON()
 	if err != nil {
