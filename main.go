@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -172,14 +171,14 @@ func generateFeed(cfg config, posts []postMeta) error {
 		}
 
 		item := jsonfeed.NewItem(url)
-		item.URL = url
-		item.Title = p.Title
+		item.URL = new(url)
+		item.Title = new(p.Title)
 
 		if !p.Date.IsZero() {
-			item.DatePublished = p.Date.Format(time.RFC3339)
+			item.DatePublished = new(p.Date.Format(time.RFC3339))
 		}
 		if p.Abstract != "" {
-			item.Summary = p.Abstract
+			item.Summary = new(p.Abstract)
 		}
 
 		// Read the generated HTML to embed in the feed.
@@ -188,7 +187,7 @@ func generateFeed(cfg config, posts []postMeta) error {
 		// abstracts.
 		htmlPath := filepath.Join(cfg.GenDir, strings.TrimSuffix(p.Filename, ".md")+".html")
 		if data, err := os.ReadFile(htmlPath); err == nil {
-			item.ContentHTML = string(data)
+			item.ContentHTML = new(string(data))
 		}
 
 		items = append(items, item)
@@ -196,22 +195,16 @@ func generateFeed(cfg config, posts []postMeta) error {
 
 	feed := jsonfeed.NewFeed(cfg.FeedTitle, items)
 	if cfg.Domain != "" {
-		feed.HomePageURL = cfg.Domain
-		feed.FeedURL = strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile
+		feed.HomePageURL = new(cfg.Domain)
+		feed.FeedURL = new(strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile)
 	}
-	feed.Expired = false
+	feed.Expired = new(false)
 
-	// Use a JSON encoder instead of feed.ToJSON() to get
-	// tab-indented output with unescaped HTML, matching the
-	// original feed format.
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "\t")
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(feed); err != nil {
+	data, err := feed.ToJSON()
+	if err != nil {
 		return err
 	}
-	return os.WriteFile(cfg.FeedFile, buf.Bytes(), 0644)
+	return os.WriteFile(cfg.FeedFile, data, 0644)
 }
 
 func main() {
