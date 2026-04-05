@@ -36,6 +36,10 @@ type config struct {
 	FeedFile string `envconfig:"FEED_FILE" default:"feed.json"`
 	// FeedTitle is the title of the JSON Feed.
 	FeedTitle string `envconfig:"FEED_TITLE" default:"blog"`
+	// Domain is the base URL of the blog, used for feed metadata.
+	// When set, home_page_url and feed_url are included in the JSON feed,
+	// and item URLs are absolute. When empty, item URLs are relative.
+	Domain string `envconfig:"DOMAIN" default:""`
 }
 
 // postFrontmatter represents the YAML front matter in a Markdown post.
@@ -163,6 +167,9 @@ func generateFeed(cfg config, posts []postMeta) error {
 	var items []jsonfeed.Item
 	for _, p := range posts {
 		url := p.staticPath(cfg.GenDir)
+		if cfg.Domain != "" {
+			url = strings.TrimRight(cfg.Domain, "/") + strings.TrimPrefix(url, ".")
+		}
 
 		item := jsonfeed.NewItem(url)
 		item.URL = url
@@ -188,6 +195,10 @@ func generateFeed(cfg config, posts []postMeta) error {
 	}
 
 	feed := jsonfeed.NewFeed(cfg.FeedTitle, items)
+	if cfg.Domain != "" {
+		feed.HomePageURL = cfg.Domain
+		feed.FeedURL = strings.TrimRight(cfg.Domain, "/") + "/" + cfg.FeedFile
+	}
 	feed.Expired = false
 
 	// Use a JSON encoder instead of feed.ToJSON() to get
